@@ -27,7 +27,7 @@ namespace triqs_ctseg {
   struct inputs_t {
 
     block_gf<imtime> Delta;           // hybridization function
-    gf<imtime, matrix_valued> Jperpt; // perpendicular spin-spin interaction
+    block2_gf<imtime> D0tJperpt;      // perpendicular spin-spin interaction
     block2_gf<imtime> D0t;            // retarded density-density interaction
   };
 

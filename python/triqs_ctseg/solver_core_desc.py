@@ -229,7 +229,7 @@ c.add_property(name = "Delta_tau",
                doc = r"""Hybridization function :math:`\Delta(\tau)`""")
 
 c.add_property(name = "Jperp_tau",
-               getter = cfunction("gf_view<imtime> Jperp_tau ()"),
+               getter = cfunction("block2_gf_view<imtime> Jperp_tau ()"),
                doc = r"""Dynamical spin-spin interaction :math:`\mathcal{J}_\perp(\tau)`""")
 
 c.add_property(name = "D0_tau",

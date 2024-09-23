@@ -67,7 +67,7 @@ namespace triqs_ctseg {
     block_gf_view<imtime> Delta_tau() { return inputs.Delta; }
 
     /// Dynamical spin-spin interaction :math:`\mathcal{J}_\perp(\tau)`
-    gf_view<imtime> Jperp_tau() { return inputs.Jperpt; }
+    block2_gf_view<imtime> Jperp_tau() { return inputs.Jperpt; }
 
     /// Dynamical density-density interaction :math:`D_0(\tau)`
     block2_gf_view<imtime> D0_tau() { return inputs.D0t; }

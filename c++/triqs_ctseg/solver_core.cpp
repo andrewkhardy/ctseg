@@ -36,7 +36,7 @@ namespace triqs_ctseg {
 
     inputs.Delta  = block_gf<imtime>({beta, Fermion, p.n_tau}, p.gf_struct);
     inputs.D0t    = make_block2_gf<imtime>({beta, Boson, p.n_tau_bosonic}, p.gf_struct);
-    inputs.Jperpt = gf<imtime>({beta, Boson, p.n_tau_bosonic}, {1, 1});
+    inputs.Jperpt = make_block2_gf<imtime>({beta, Boson, p.n_tau_bosonic}, p.gf_struct);
 
     inputs.Delta()  = 0;
     inputs.D0t()    = 0;

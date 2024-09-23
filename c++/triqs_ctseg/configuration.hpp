@@ -87,7 +87,7 @@ namespace triqs_ctseg {
     std::vector<std::vector<segment_t>> seglists;
 
     // List of Jperp lines, NOT ordered.
-    std::vector<Jperp_line_t> Jperp_list;
+    std::vector<std::vector<Jperp_line_t>> Jperp_list;
 
     // Construct from the number of colors
     configuration_t(int n_color) : seglists(n_color) {}
@@ -98,7 +98,13 @@ namespace triqs_ctseg {
     }
 
     // Expansion order in Jperp
-    long Jperp_order() const { return Jperp_list.size(); }
+    size_J total_size = 0;
+    for (const auto& Jperp_line : Jperp_list) {
+        total_size += Jperp_line.size();
+    }
+    double average_size = static_cast<double>(total_size) / Jperp_list.size();
+
+    long Jperp_order() const { return average_size; }
 
     // Expansion order in Delta
     long Delta_order() const { return n_segments() - 2 * Jperp_order(); }

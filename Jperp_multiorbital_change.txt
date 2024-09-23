@@ -1,0 +1,78 @@
+Conjectured Order of Code Calls (?)
+
+solver_core_desc.py <- solver_core <- inputs <- invariants <-work_data <- configuration  <- moves
+
+List of Changes in CTSEG I made an see if I need to make more
+
+
+1. solver_core_desc.py 
+Line 232 
+getter = cfunction("block2_gf_view<imtime> Jperp_tau ()"),
+
+2. solver_core.cpp
+Line 39
+inputs.Jperpt = make_block2_gf<imtime>({beta, Boson, p.n_tau_bosonic}, p.gf_struct);
+3. solver_core.hpp
+Line 70
+block2_gf_view<imtime> Jperp_tau() { return inputs.Jperpt; }
+
+4. inputs.hpp
+Line 30
+
+5. work_data.cpp
+
+Lines 92 to 100 
+
+Repeated Lines 82 to 90 for D0t but replaced with Jperpt
+
+Commented out Lines 105-108.
+
+Made Lines 143-172 match structure with the lines 115-140 that are the Dt data. 
+# This isn't quite the right thing to do?
+# I need to understand the n_color or n_orbitals distinction ? I need to not do weird spin things but iterate over every orbital. Extra for-loops?
+
+6. configuration.hpp
+
+
+Line 87
+std::vector<std::vector<segment_t>> seglists;
+
+Line 90
+
+std::vector<std::vector<Jperp_line_t>> Jperp_list;
+
+Line 101
+
+// Expansion order in Jperp
+size_J total_size = 0;
+for (const auto& Jperp_line : Jperp_list) {
+    total_size += Jperp_line.size();
+}
+double average_size = static_cast<double>(total_size) / Jperp_list.size();
+
+long Jperp_order() const { return average_size; }
+
+7. invariants.cpp
+
+Who is feeding Jperp list here? 
+
+
+MOVES
+
+
+Not touching measures
+
+
+ERRORS
+
+09.23.2024
+
+configuration.cpp Line 288
+
+const class std::vector<triqs_ctseg::Jperp_line_t>’ has no member named ‘tau_Sminus
+
+
+QUESTIONS
+
+What is the difference between block2_gf and block_gf ? 
+

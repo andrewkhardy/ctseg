@@ -89,14 +89,23 @@ namespace triqs_ctseg {
     // Symetrize
     for (auto t : D0t.mesh()) D0t[t] = 0.5 * make_regular(D0t[t] + transpose(D0t[t]));
 
+    Jperpt = gf<imtime>({beta, Boson, p.n_tau_bosonic}, {n_color, n_color});
+    for (int c1 : range(n_color)) {
+      for (int c2 : range(n_color)) {
+        Jperpt.data()(range::all, c1, c2) =
+           inputs.Jperpt(block_number[c1], block_number[c2]).data()(range::all, index_in_block[c1], index_in_block[c2]);
+      }
+    }
+    // Symetrize
+    for (auto t : Jperpt.mesh()) Jperpt[t] = 0.5 * make_regular(Jperpt[t] + transpose(Jperpt[t]));
     // Do we have D(tau) and Jperp(tau)? Yes, unless the data is 0
     has_Dt    = max_element(abs(D0t.data())) > 1.e-13;
-    has_Jperp = max_element(abs(inputs.Jperpt.data())) > 1.e-13;
+    has_Jperp = max_element(abs(Jperpt.data())) > 1.e-13;
 
     // Check: no Jperp implementation for more than 2 colors
-    if (n_color != 2) {
-      ALWAYS_EXPECTS((not has_Jperp), "Error : has_jperp is true and we have {} colors instead of 2", n_color);
-    }
+    // if (n_color != 2) {
+    //   ALWAYS_EXPECTS((not has_Jperp), "Error : has_jperp is true and we have {} colors instead of 2", n_color);
+    // }
 
     // For numerical integration of the D0 and Jperp
     auto ramp = nda::zeros<double>(p.n_tau_bosonic);
@@ -132,36 +141,35 @@ namespace triqs_ctseg {
 
     // Jperp interactions
     if (has_Jperp) {
-      Jperp = inputs.Jperpt;
+      Jperp = Jperpt;
       if (not has_Dt)
         rot_inv = false;
       else {
         Kprime_spin = gf<imtime>({beta, Boson, p.n_tau_bosonic}, {n_color, n_color}); // used in computation of F(tau)
         // Integrate Jperp to obtain the S_z.S_z part of K'(tau) (called Kprime_spin)
-        auto Kprime_J                  = Jperp;
-        nda::array<dcomplex, 1> J_data = Jperp.data()(range::all, 0, 0);
-        auto first_integral            = nda::zeros<dcomplex>(p.n_tau_bosonic);
-        // Trapezoidal integration
-        for (int i = 1; i < J_data.size(); ++i) {
-          first_integral(i) = first_integral(i - 1) + (J_data(i) + J_data(i - 1)) / 2;
-        }
-        // Noramlize by bin size
-        first_integral *= beta / (p.n_tau_bosonic - 1);
-        // Enforce Kprime_J(beta/2) = 0
-        Kprime_J.data()(range::all, 0, 0) = first_integral - first_integral((p.n_tau_bosonic - 1) / 2);
-        // Kprime_spin = +/- Kprime_J depending on color
+        auto Kprime_J = Jperp;
         for (auto c1 : range(n_color)) {
           for (auto c2 : range(n_color)) {
-            Kprime_spin.data()(range::all, c1, c2) = (c1 == c2 ? 1 : -1) * Kprime_J.data()(range::all, 0, 0) / 4;
-          }
+            nda::array<dcomplex, 1> J_data = Jperp.data()(range::all, c1, c2);
+            auto first_integral            = nda::zeros<dcomplex>(p.n_tau_bosonic);
+            // Trapezoidal integration
+            for (int i = 1; i < J_data.size(); ++i) {
+              first_integral(i) = first_integral(i - 1) + (J_data(i) + J_data(i - 1)) / 2;
+            }
+            // Noramlize by bin size
+            first_integral *= beta / (p.n_tau_bosonic - 1);
+            // Enforce Kprime_J(beta/2) = 0
+            Kprime_J.data()(range::all, c1, c2) = first_integral - first_integral((p.n_tau_bosonic - 1) / 2);
+            // Kprime_spin = +/- Kprime_J depending on color
+
+            Kprime_spin.data()(range::all, c1, c2) = (c1 == c2 ? 1 : -1) * Kprime_J.data()(range::all, c1, c2) / 4;
+            auto Kprime_0 = gf<imtime>({beta, Boson, p.n_tau_bosonic}, {n_color, n_color});
+            Kprime_0      = Kprime - Kprime_spin;
+            // The "remainder" Kprime_0 must be color-independent for there to be rotational invariance
+            if (max_element(abs(Kprime_0.data()(range::all, 0, 0) - Kprime_0.data()(range::all, 0, 1))) > 1.e-13)
+              rot_inv = false;
         }
-        auto Kprime_0 = gf<imtime>({beta, Boson, p.n_tau_bosonic}, {n_color, n_color});
-        Kprime_0      = Kprime - Kprime_spin;
-        // The "remainder" Kprime_0 must be color-independent for there to be rotational invariance
-        if (max_element(abs(Kprime_0.data()(range::all, 0, 0) - Kprime_0.data()(range::all, 0, 1))) > 1.e-13)
-          rot_inv = false;
       }
-    }
 
     // Report
     if (c.rank() == 0) {

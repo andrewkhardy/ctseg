@@ -98,6 +98,7 @@ namespace triqs_ctseg {
 
   void check_jlines(configuration_t const &config) {
     // Prepare lists of times in spin lines
+    // Need to allow Block2Gf inputs. Perhaps the best place to start is in Python code?
     auto const &jl = config.Jperp_list;
     if (jl.empty()) return;
     std::vector<tau_t> Splus, Sminus;
