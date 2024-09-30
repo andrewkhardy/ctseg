@@ -147,12 +147,13 @@ namespace triqs_ctseg::moves {
     dsl.insert(std::upper_bound(begin(dsl), end(dsl), spin_seg), spin_seg);
 
     // Insert Jperp line
-    auto &jl = config.Jperp_list;
-    if (dest_color == 0)
-      jl.push_back(Jperp_line_t{spin_seg.tau_c, spin_seg.tau_cdag});
-    else
-      jl.push_back(Jperp_line_t{spin_seg.tau_cdag, spin_seg.tau_c});
-
+    for (auto const &[c, jl] : itertools::enumerate(config.Jperp_list)) {
+      //auto &jl = config.Jperp_list;
+      if (dest_color == 0)
+        jl.push_back(Jperp_line_t{spin_seg.tau_c, spin_seg.tau_cdag});
+      else
+        jl.push_back(Jperp_line_t{spin_seg.tau_cdag, spin_seg.tau_c});
+    }
     // Check invariant
     if constexpr (print_logs or ctseg_debug) check_invariant(config, wdata);
     LOG("Configuration is {}", config);

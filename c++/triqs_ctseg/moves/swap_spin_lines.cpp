@@ -24,67 +24,76 @@ namespace triqs_ctseg::moves {
   double swap_spin_lines::attempt() {
 
     LOG("\n =================== ATTEMPT SWAP SPIN LINES ================ \n");
-
-    // ------------ Choose two spin lines --------------
-
-    auto &jl = config.Jperp_list;
-
-    if (jl.empty() or jl.size() == 1) {
-      LOG("Nothing to swap!");
-      return 0;
-    }
-
-    first_line_idx  = rng(jl.size());
-    second_line_idx = rng(jl.size() - 1);
-    if (second_line_idx >= first_line_idx) ++second_line_idx; // trick to select second_line_idx ! = first_line_idx
-
-    auto &l1 = jl[first_line_idx];
-    auto &l2 = jl[second_line_idx];
-
-    // ------------  Trace ratio  -------------
-
-    double J_current =                                                 //
-       real(wdata.Jperp(double(l1.tau_Sminus - l1.tau_Splus))(0, 0)) * //
-       real(wdata.Jperp(double(l2.tau_Sminus - l2.tau_Splus))(0, 0));
-
-    double J_future =                                                  //
-       real(wdata.Jperp(double(l1.tau_Sminus - l2.tau_Splus))(0, 0)) * //
-       real(wdata.Jperp(double(l2.tau_Sminus - l1.tau_Splus))(0, 0));
-
-    double trace_ratio = J_future / J_current;
-
+    double sum_ratios = 0.0;
+    int count         = 0;
     // ------------  Det ratio  ---------------
 
     double det_ratio = 1.0;
+    double det_sign = 1.0;
 
-    // ------------  Proposition ratio ------------
+    // ------------ Choose two spin lines --------------
 
-    double prop_ratio = 1.0;
+    for (auto const &[b, jl] : itertools::enumerate(config.Jperp_list)) {
 
-    LOG("trace_ratio  = {}, prop_ratio = {}, det_ratio = {}", trace_ratio, prop_ratio, det_ratio);
+      if (jl.empty() or jl.size() == 1) {
+        LOG("Nothing to swap!");
+        return 0;
+      }
 
-    double prod = trace_ratio * det_ratio * prop_ratio;
-    return (std::isfinite(prod) ? prod : 1);
+      first_line_idx  = rng(jl.size());
+      second_line_idx = rng(jl.size() - 1);
+      if (second_line_idx >= first_line_idx) ++second_line_idx; // trick to select second_line_idx ! = first_line_idx
+
+      auto &l1 = jl[first_line_idx];
+      auto &l2 = jl[second_line_idx];
+
+      // ------------  Trace ratio  -------------
+
+      double J_current =                                                 //
+        real(wdata.Jperp(double(l1.tau_Sminus - l1.tau_Splus))(0, 0)) * //
+        real(wdata.Jperp(double(l2.tau_Sminus - l2.tau_Splus))(0, 0));
+
+      double J_future =                                                  //
+        real(wdata.Jperp(double(l1.tau_Sminus - l2.tau_Splus))(0, 0)) * //
+        real(wdata.Jperp(double(l2.tau_Sminus - l1.tau_Splus))(0, 0));
+
+      double trace_ratio = J_future / J_current;
+
+
+
+      // ------------  Proposition ratio ------------
+
+      double prop_ratio = 1.0;
+
+      LOG("trace_ratio  = {}, prop_ratio = {}, det_ratio = {}", trace_ratio, prop_ratio, det_ratio);
+
+      double prod = trace_ratio * det_ratio * prop_ratio;
+      sum_ratios += prod;
+      ++count;
+      det_sign    = (det_ratio > 0) ? 1.0 : -1.0;
+    }
+    double final_prod = sum_ratios / count;
+    return (std::isfinite(final_prod) ? final_prod : det_sign);
   }
-
   // --------------------------------------------
 
   double swap_spin_lines::accept() {
+    for (auto const &[b, jl] : itertools::enumerate(config.Jperp_list)) {
 
-    LOG("\n - - - - - ====> ACCEPT - - - - - - - - - - -\n");
+      LOG("\n - - - - - ====> ACCEPT - - - - - - - - - - -\n");
 
-    auto &jl = config.Jperp_list;
-    auto &l1 = jl[first_line_idx];
-    auto &l2 = jl[second_line_idx];
+      auto &l1 = jl[first_line_idx];
+      auto &l2 = jl[second_line_idx];
 
-    // Swap lines
-    std::swap(l1.tau_Splus, l2.tau_Splus);
+      // Swap lines
+      std::swap(l1.tau_Splus, l2.tau_Splus);
 
-    // Check invariant
-    if constexpr (print_logs or ctseg_debug) check_invariant(config, wdata);
-    LOG("Configuration is {}", config);
-
+      // Check invariant
+      if constexpr (print_logs or ctseg_debug) check_invariant(config, wdata);
+      LOG("Configuration is {}", config);
+    }
     return 1.0;
+
   }
 
   //--------------------------------------------------

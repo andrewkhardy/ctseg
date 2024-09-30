@@ -243,7 +243,7 @@ namespace triqs_ctseg {
   // ---------------------------
 
   // List of operators containing all colors.
-  // Time are ordered in decreasing order, in agreement with the whole physic literature.
+  // Time are ordered in decreasing order, in agreement with the whole physics literature.
   std::vector<colored_ops_t> colored_ordered_ops(std::vector<std::vector<segment_t>> const &seglists) {
     int c = 0;                           // index of color
     std::vector<colored_ops_t> ops_list; // list of all the operators
@@ -284,8 +284,10 @@ namespace triqs_ctseg {
             << " J:" << seg.J_cdag << "]\n";
     }
     out << "\nSpin lines : \n";
-    for (auto const &[i, line] : itertools::enumerate(config.Jperp_list)) {
-      out << "S_minus : [" << line.tau_Sminus << "] S_plus : [" << line.tau_Splus << "]\n";
+    for (auto const &[c, vec] : itertools::enumerate(config.Jperp_list)) {
+      out << '\n';
+      for (auto const &[i, line] : itertools::enumerate(vec)) 
+        out << "S_minus : [" << line.tau_Sminus << "] S_plus : [" << line.tau_Splus << "]\n";
     }
     return out;
   }

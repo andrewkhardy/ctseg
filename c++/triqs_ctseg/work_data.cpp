@@ -89,18 +89,18 @@ namespace triqs_ctseg {
     // Symetrize
     for (auto t : D0t.mesh()) D0t[t] = 0.5 * make_regular(D0t[t] + transpose(D0t[t]));
 
-    Jperpt = gf<imtime>({beta, Boson, p.n_tau_bosonic}, {n_color, n_color});
+    Jperp= gf<imtime>({beta, Boson, p.n_tau_bosonic}, {n_color, n_color});
     for (int c1 : range(n_color)) {
       for (int c2 : range(n_color)) {
-        Jperpt.data()(range::all, c1, c2) =
+        Jperp.data()(range::all, c1, c2) =
            inputs.Jperpt(block_number[c1], block_number[c2]).data()(range::all, index_in_block[c1], index_in_block[c2]);
       }
     }
     // Symetrize
-    for (auto t : Jperpt.mesh()) Jperpt[t] = 0.5 * make_regular(Jperpt[t] + transpose(Jperpt[t]));
+    for (auto t : Jperp.mesh()) Jperp[t] = 0.5 * make_regular(Jperp[t] + transpose(Jperp[t]));
     // Do we have D(tau) and Jperp(tau)? Yes, unless the data is 0
     has_Dt    = max_element(abs(D0t.data())) > 1.e-13;
-    has_Jperp = max_element(abs(Jperpt.data())) > 1.e-13;
+    has_Jperp = max_element(abs(Jperp.data())) > 1.e-13;
 
     // Check: no Jperp implementation for more than 2 colors
     // if (n_color != 2) {
@@ -141,7 +141,6 @@ namespace triqs_ctseg {
 
     // Jperp interactions
     if (has_Jperp) {
-      Jperp = Jperpt;
       if (not has_Dt)
         rot_inv = false;
       else {
@@ -168,8 +167,10 @@ namespace triqs_ctseg {
             // The "remainder" Kprime_0 must be color-independent for there to be rotational invariance
             if (max_element(abs(Kprime_0.data()(range::all, 0, 0) - Kprime_0.data()(range::all, 0, 1))) > 1.e-13)
               rot_inv = false;
+          }
         }
       }
+    }
 
     // Report
     if (c.rank() == 0) {
@@ -213,7 +214,6 @@ namespace triqs_ctseg {
       dets.back().set_precision_error(p.det_precision_error);
     }
   } // work_data constructor
-
   int work_data_t::block_to_color(int block, int idx) const {
     std::vector<long> gf_block_size_partial_sum;
     long acc = 0;

@@ -102,9 +102,12 @@ namespace triqs_ctseg {
     auto const &jl = config.Jperp_list;
     if (jl.empty()) return;
     std::vector<tau_t> Splus, Sminus;
-    for (auto const &[i, line] : itertools::enumerate(config.Jperp_list)) {
-      Splus.push_back(line.tau_Splus);
-      Sminus.push_back(line.tau_Sminus);
+    for (auto const &[c, vec] : itertools::enumerate(config.Jperp_list)) {
+
+      for (auto const &[i, line] : itertools::enumerate(vec)) {
+        Splus.push_back(line.tau_Splus);
+        Sminus.push_back(line.tau_Sminus);
+    }
     }
     std::sort(Splus.begin(), Splus.end());
     std::sort(Sminus.begin(), Sminus.end());

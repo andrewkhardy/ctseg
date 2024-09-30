@@ -25,75 +25,80 @@ namespace triqs_ctseg::moves {
   double split_spin_segment::attempt() {
 
     LOG("\n =================== ATTEMPT SPLIT SPIN ================ \n");
+    double sum_ratios = 0.0;
+    int count         = 0;
+    // ------------  Det ratio  ---------------
 
+    double det_ratio = 1.0;
+    double det_sign = 1.0;
     // ------------ Choose a spin line --------------
 
-    auto &jl = config.Jperp_list;
+    for (auto const &[b, jl] : itertools::enumerate(config.Jperp_list)) {
 
-    if (jl.empty()) {
-      LOG("No bosonic lines!");
-      return 0;
+      if (jl.empty()) {
+        LOG("No bosonic lines!");
+        return 0;
+      }
+
+      line_idx   = rng(jl.size());
+      auto &line = jl[line_idx];
+      LOG("Splitting S_plus at {}, S_minus at {}", line.tau_Splus, line.tau_Sminus);
+
+      ln_trace_ratio = 0;
+      prop_ratio     = jl.size();
+
+      // ----------- Propose move in each color ----------
+
+      std::tie(idx_c_up, idx_cdag_dn, tau_up) = propose(0); // spin up
+      std::tie(idx_c_dn, idx_cdag_up, tau_dn) = propose(1); // spin down
+
+      // ----------- Trace ratio ----------
+      // Correct for the overlap between the two modified segments
+      auto &sl_up     = config.seglists[0];
+      auto &sl_dn     = config.seglists[1];
+      auto old_seg_up = sl_up[idx_c_up];
+      auto old_seg_dn = sl_dn[idx_c_dn];
+      auto new_seg_up = segment_t{tau_up, old_seg_up.tau_cdag};
+      auto new_seg_dn = segment_t{tau_dn, old_seg_dn.tau_cdag};
+
+      ln_trace_ratio += -wdata.U(0, 1)
+        * (overlap(new_seg_up, new_seg_dn) + overlap(old_seg_up, old_seg_dn) - //
+            overlap(new_seg_up, old_seg_dn) - overlap(new_seg_dn, old_seg_up));
+
+      // Correct for the dynamical interaction between the two operators that have been moved
+      if (wdata.has_Dt) {
+        ln_trace_ratio -= real(wdata.K(double(tau_up - old_seg_dn.tau_c))(0, 1));
+        ln_trace_ratio -= real(wdata.K(double(tau_dn - old_seg_up.tau_c))(0, 1));
+        ln_trace_ratio += real(wdata.K(double(tau_dn - tau_up))(0, 1));
+        ln_trace_ratio += real(wdata.K(double(old_seg_up.tau_c - old_seg_dn.tau_c))(0, 1));
+      }
+
+      double trace_ratio = std::exp(ln_trace_ratio);
+      trace_ratio /= -real(wdata.Jperp(double(line.tau_Splus - line.tau_Sminus))(0, 0)) / 2;
+
+      // Spin up
+      auto &D_up = wdata.dets[0];
+      det_ratio *= D_up.try_insert(det_lower_bound_x(D_up, sl_up[idx_cdag_up].tau_cdag), //
+                                  det_lower_bound_y(D_up, tau_up),                      //
+                                  {sl_up[idx_cdag_up].tau_cdag, 0}, {tau_up, 0});
+
+      // Spin down
+      auto &D_dn = wdata.dets[1];
+      det_ratio *=
+        D_dn.try_insert(det_lower_bound_x(D_dn, sl_dn[idx_cdag_dn].tau_cdag), det_lower_bound_y(D_dn, tau_dn), //
+                        {sl_dn[idx_cdag_dn].tau_cdag, 0}, {tau_dn, 0});
+
+      LOG("trace_ratio  = {}, prop_ratio = {}, det_ratio = {}", trace_ratio, prop_ratio, det_ratio);
+
+
+      double prod = trace_ratio * det_ratio * prop_ratio;
+      sum_ratios += prod;
+      ++count;
+      det_sign    = (det_ratio > 0) ? 1.0 : -1.0;
     }
-
-    line_idx   = rng(jl.size());
-    auto &line = jl[line_idx];
-    LOG("Splitting S_plus at {}, S_minus at {}", line.tau_Splus, line.tau_Sminus);
-
-    ln_trace_ratio = 0;
-    prop_ratio     = jl.size();
-
-    // ----------- Propose move in each color ----------
-
-    std::tie(idx_c_up, idx_cdag_dn, tau_up) = propose(0); // spin up
-    std::tie(idx_c_dn, idx_cdag_up, tau_dn) = propose(1); // spin down
-
-    // ----------- Trace ratio ----------
-    // Correct for the overlap between the two modified segments
-    auto &sl_up     = config.seglists[0];
-    auto &sl_dn     = config.seglists[1];
-    auto old_seg_up = sl_up[idx_c_up];
-    auto old_seg_dn = sl_dn[idx_c_dn];
-    auto new_seg_up = segment_t{tau_up, old_seg_up.tau_cdag};
-    auto new_seg_dn = segment_t{tau_dn, old_seg_dn.tau_cdag};
-
-    ln_trace_ratio += -wdata.U(0, 1)
-       * (overlap(new_seg_up, new_seg_dn) + overlap(old_seg_up, old_seg_dn) - //
-          overlap(new_seg_up, old_seg_dn) - overlap(new_seg_dn, old_seg_up));
-
-    // Correct for the dynamical interaction between the two operators that have been moved
-    if (wdata.has_Dt) {
-      ln_trace_ratio -= real(wdata.K(double(tau_up - old_seg_dn.tau_c))(0, 1));
-      ln_trace_ratio -= real(wdata.K(double(tau_dn - old_seg_up.tau_c))(0, 1));
-      ln_trace_ratio += real(wdata.K(double(tau_dn - tau_up))(0, 1));
-      ln_trace_ratio += real(wdata.K(double(old_seg_up.tau_c - old_seg_dn.tau_c))(0, 1));
-    }
-
-    double trace_ratio = std::exp(ln_trace_ratio);
-    trace_ratio /= -real(wdata.Jperp(double(line.tau_Splus - line.tau_Sminus))(0, 0)) / 2;
-
-    // ----------- Det ratio -----------
-    double det_ratio = 1;
-
-    // Spin up
-    auto &D_up = wdata.dets[0];
-    det_ratio *= D_up.try_insert(det_lower_bound_x(D_up, sl_up[idx_cdag_up].tau_cdag), //
-                                 det_lower_bound_y(D_up, tau_up),                      //
-                                 {sl_up[idx_cdag_up].tau_cdag, 0}, {tau_up, 0});
-
-    // Spin down
-    auto &D_dn = wdata.dets[1];
-    det_ratio *=
-       D_dn.try_insert(det_lower_bound_x(D_dn, sl_dn[idx_cdag_dn].tau_cdag), det_lower_bound_y(D_dn, tau_dn), //
-                       {sl_dn[idx_cdag_dn].tau_cdag, 0}, {tau_dn, 0});
-
-    LOG("trace_ratio  = {}, prop_ratio = {}, det_ratio = {}", trace_ratio, prop_ratio, det_ratio);
-
-    double prod = trace_ratio * det_ratio * prop_ratio;
-    det_sign    = (det_ratio > 0) ? 1.0 : -1.0;
-
-    return (std::isfinite(prod) ? prod : det_sign);
+    double final_prod = sum_ratios / count;
+    return (std::isfinite(final_prod) ? final_prod : det_sign);
   }
-
   //--------------------------------------------------
 
   double split_spin_segment::accept() {
@@ -124,9 +129,10 @@ namespace triqs_ctseg::moves {
     fix_ordering_first_last(sl_dn);
 
     // Remove Jperp line
-    auto &jl = config.Jperp_list;
-    jl.erase(begin(jl) + line_idx);
+    for (auto const &[b, jl] : itertools::enumerate(config.Jperp_list)) {
 
+      jl.erase(begin(jl) + line_idx);
+    }
     // Compute sign
     double final_sign = trace_sign(wdata);
     double sign_ratio = final_sign / initial_sign;
@@ -153,8 +159,8 @@ namespace triqs_ctseg::moves {
   //--------------------------------------------------
 
   std::tuple<long, long, tau_t> split_spin_segment::propose(int color) {
-
-    auto &line      = config.Jperp_list[line_idx];
+    auto &jl       = config.Jperp_list[color];
+    auto &line      = jl[line_idx];
     int other_color = 1 - color;
     auto &sl        = config.seglists[color];
     auto &dsl       = config.seglists[other_color];

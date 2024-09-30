@@ -28,6 +28,7 @@ Repeated Lines 82 to 90 for D0t but replaced with Jperpt
 Commented out Lines 105-108.
 
 Made Lines 143-172 match structure with the lines 115-140 that are the Dt data. 
+
 # This isn't quite the right thing to do?
 # I need to understand the n_color or n_orbitals distinction ? I need to not do weird spin things but iterate over every orbital. Extra for-loops?
 
@@ -44,7 +45,7 @@ std::vector<std::vector<Jperp_line_t>> Jperp_list;
 Line 101
 
 // Expansion order in Jperp
-size_J total_size = 0;
+size_t total_size = 0;
 for (const auto& Jperp_line : Jperp_list) {
     total_size += Jperp_line.size();
 }
@@ -52,24 +53,103 @@ double average_size = static_cast<double>(total_size) / Jperp_list.size();
 
 long Jperp_order() const { return average_size; }
 
-7. invariants.cpp
+7. configuration.cpp
+
+Lines 287-290
+
+out << "\nSpin lines : \n";
+for (auto const &[c, vec] : itertools::enumerate(config.Jperp_list)) {
+    out << '\n';
+    for (auto const &[i, line] : itertools::enumerate(vec)) 
+    out << "S_minus : [" << line.tau_Sminus << "] S_plus : [" << line.tau_Splus << "]\n";
+}
+
+8. invariants.cpp
 
 Who is feeding Jperp list here? 
 
 
 MOVES
 
+9. insert_spin_segment.cpp
+Line 114 
 
-Not touching measures
+Need to get the right size to count
+
+Lines 150-156
+
+for (auto const &[c, jl] : itertools::enumerate(config.Jperp_list)) {
+    //auto &jl = config.Jperp_list;
+    if (dest_color == 0)
+    jl.push_back(Jperp_line_t{spin_seg.tau_c, spin_seg.tau_cdag});
+    else
+    jl.push_back(Jperp_line_t{spin_seg.tau_cdag, spin_seg.tau_c});
+}
+
+10. regroup_spin_segment.cpp
+
+Line 115
+
+for (auto const &[c, jl] : itertools::enumerate(config.Jperp_list)) {
+    jl.push_back(Jperp_line_t{tau_up, tau_dn});
+}
+
+11. remove_spin_segment.cpp
+Line 29
+
+    for (auto const &[c, jl] : itertools::enumerate(config.Jperp_list)) {
+
+
+Line 115
+
+    for (auto const &[c, jl] : itertools::enumerate(config.Jperp_list)) {
+      jl.push_back(Jperp_line_t{tau_up, tau_dn});
+    }
+
+Line 139, 140
+Need to make updates so that these actually compute the right things now.
+
+12.split_spin_segment.cpp 
+
+Line 35- Basically the same thing as above
+
+Line 131
+    for (auto const &[b, jl] : itertools::enumerate(config.Jperp_list)) {
+
+      jl.erase(begin(jl) + line_idx);
+    }
+    // Compute sign
+161
+
+    auto &jl       = config.Jperp_list[color];
+
+should probably make this orbital
+MEASURES
+
+11. Sperp_tau.cpp
+
+Lines 42-50
+
+    Z += s;
+    for (auto const &[c, vec] : itertools::enumerate(config.Jperp_list)) {
+      for (auto const &[k, line] : itertools::enumerate(vec)) {
+        auto dtau1 = double(line.tau_Splus - line.tau_Sminus);
+        auto dtau2 = double(line.tau_Sminus - line.tau_Splus);
+        ss_tau[closest_mesh_pt(dtau1)] += 0.5 / (real(wdata.Jperp(dtau1)(0, 0)));
+        ss_tau[closest_mesh_pt(dtau2)] += 0.5 / (real(wdata.Jperp(dtau2)(0, 0)));
+      }
+    }
+  }
 
 
 ERRORS
 
-09.23.2024
+09.27.2024
 
-configuration.cpp Line 288
-
-const class std::vector<triqs_ctseg::Jperp_line_t>’ has no member named ‘tau_Sminus
+/home/andrewhardy/Documents/Graduate/CCQ/ctseg.src/c++/triqs_ctseg/measures/Sperp_tau.cpp:44:32: error: ‘const class std::vector<triqs_ctseg::Jperp_line_t>’ has no member named ‘tau_Splus’
+   44 |       auto dtau1 = double(line.tau_Splus - line.tau_Sminus);
+      |                                ^~~~~~~~~
+/home/andrewhardy/Documents/Graduate/CCQ/ctseg.src/c++/triqs_ctseg/measures
 
 
 QUESTIONS

@@ -98,14 +98,19 @@ namespace triqs_ctseg {
     }
 
     // Expansion order in Jperp
-    size_J total_size = 0;
-    for (const auto& Jperp_line : Jperp_list) {
-        total_size += Jperp_line.size();
+    size_t total_size = 0;
+    double average_Jperp_size() const {
+        size_t total_size = 0;
+        for (const auto& Jperp_line : Jperp_list) {
+            total_size += Jperp_line.size();
+        }
+        return static_cast<double>(total_size) / Jperp_list.size();
     }
-    double average_size = static_cast<double>(total_size) / Jperp_list.size();
 
-    long Jperp_order() const { return average_size; }
-
+    // Return the average size of Jperp lines
+    long Jperp_order() const {
+        return static_cast<long>(average_Jperp_size());
+    }
     // Expansion order in Delta
     long Delta_order() const { return n_segments() - 2 * Jperp_order(); }
 

@@ -111,9 +111,10 @@ namespace triqs_ctseg::moves {
     fix_ordering_first_last(sl_up);
     fix_ordering_first_last(sl_dn);
 
-    // Add spin line
-    config.Jperp_list.push_back(Jperp_line_t{tau_up, tau_dn});
-
+    // Add spin 
+    for (auto const &[c, jl] : itertools::enumerate(config.Jperp_list)) {
+      jl.push_back(Jperp_line_t{tau_up, tau_dn});
+    }
     // Compute sign
     double final_sign = trace_sign(wdata);
     double sign_ratio = final_sign / initial_sign;
