@@ -1,19 +1,8 @@
-// Copyright (c) 2022-2024 Simons Foundation
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You may obtain a copy of the License at
-//     https://www.gnu.org/licenses/gpl-3.0.txt
-//
-// Authors: Nikita Kavokine, Olivier Parcollet, Nils Wentzell
+// Copyright (c) 2022--present, The Simons Foundation
+// Copyright (c) 2022--present, Max Planck Institute for Polymer Research, Mainz, Germany
+// This file is part of TRIQS/ctseg and is licensed under the terms of GPLv3 or later.
+// SPDX-License-Identifier: GPL-3.0-or-later
+// See LICENSE in the root of this distribution for details.
 
 #include <triqs/mc_tools/mc_generic.hpp>
 #include <triqs/utility/callbacks.hpp>
@@ -80,6 +69,8 @@ namespace triqs_ctseg {
     if (wdata.has_Delta) {
       if (p.move_insert_segment) CTQMC.add_move(moves::insert_segment{wdata, config, CTQMC.get_rng()}, "insert");
       if (p.move_remove_segment) CTQMC.add_move(moves::remove_segment{wdata, config, CTQMC.get_rng()}, "remove");
+      if (p.move_double_insert_segment) CTQMC.add_move(moves::double_insert_segment{wdata, config, CTQMC.get_rng()}, "double insert");
+      if (p.move_double_remove_segment) CTQMC.add_move(moves::double_remove_segment{wdata, config, CTQMC.get_rng()}, "double remove");
       if (p.move_move_segment) CTQMC.add_move(moves::move_segment{wdata, config, CTQMC.get_rng()}, "move");
       if (p.move_split_segment) CTQMC.add_move(moves::split_segment{wdata, config, CTQMC.get_rng()}, "split");
       if (p.move_regroup_segment) CTQMC.add_move(moves::regroup_segment{wdata, config, CTQMC.get_rng()}, "regroup");

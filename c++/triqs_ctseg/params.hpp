@@ -1,19 +1,8 @@
-// Copyright (c) 2022-2024 Simons Foundation
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You may obtain a copy of the License at
-//     https://www.gnu.org/licenses/gpl-3.0.txt
-//
-// Authors: Nikita Kavokine, Hao Lu, Olivier Parcollet, Nils Wentzell
+// Copyright (c) 2022--present, The Simons Foundation
+// Copyright (c) 2022--present, Max Planck Institute for Polymer Research, Mainz, Germany
+// This file is part of TRIQS/ctseg and is licensed under the terms of GPLv3 or later.
+// SPDX-License-Identifier: GPL-3.0-or-later
+// See LICENSE in the root of this distribution for details.
 
 #pragma once
 
@@ -85,6 +74,12 @@ namespace triqs_ctseg {
 
     /// Whether to perform the move remove segment
     bool move_remove_segment = true;
+
+    /// Whether to perform the move double insert segment
+    bool move_double_insert_segment = true;
+
+    /// Whether to perform the move double remove segment
+    bool move_double_remove_segment = true;
 
     /// Whether to perform the move move segment
     bool move_move_segment = true;

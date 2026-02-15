@@ -45,7 +45,7 @@ provided by measuring the improved estimator
 
 .. math::
 
-    F_{ij}^A (\tau) = \langle T_{\tau} c_{iA}(\tau) c_{jA}^{\dagger}(0) I_i^{A}(\tau). 
+    F_{ij}^A (\tau) = \langle T_{\tau} c_{iA}(\tau) c_{jA}^{\dagger}(0) I_i^{A}(\tau) \rangle.
 
 In the absence of :math:`\mathcal{J}_{\perp}` interactions, 
 
@@ -133,8 +133,8 @@ The perpendicular spin-spin correlation function is defined as
 This measurement is useful if rotational invariance is broken (for instance, in the presence of a Zeeman field). It is 
 implemented for a single orbital only. Otherwise, all components of the spin-spin correlation function can be determined from :math:`\chi_{ij}(\tau)`, with better statistics. 
 
-The measurement is turned on by setting ``measure_sperp_tau`` in the ``solve_params`` to ``True``. The result of the 
-accumulation is accessible through the ``results.sperp_tau`` attribute of the solver object, as a matrix-valued
+The measurement is turned on by setting ``measure_Sperp_tau`` in the ``solve_params`` to ``True``. The result of the 
+accumulation is accessible through the ``results.Sperp_tau`` attribute of the solver object, as a matrix-valued
 ``GfImTime`` with size :math:`1 \times 1`.
 
 State histogram
